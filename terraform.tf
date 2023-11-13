@@ -45,7 +45,7 @@ resource "kubernetes_deployment" "color" {
             } //match_labels
         } //selector
         #Number of replicas
-        replicas = 1
+        replicas = 3
         #Template for the creation of the pod
         template { 
             metadata {
