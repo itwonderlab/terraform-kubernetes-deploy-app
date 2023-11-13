@@ -1,34 +1,33 @@
-# Copyright (C) 2018 - 2020 IT Wonder Lab (https://www.itwonderlab.com)
+# Copyright (C) 2018 - 2023 IT Wonder Lab (https://www.itwonderlab.com)
 #
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
-
 # -------------------------------- WARNING --------------------------------
 # IT Wonder Lab's best practices for infrastructure include modularizing 
 # Terraform configuration. 
 # In this example, we define everything in a single file. 
 # See other tutorials for Terraform best practices for Kubernetes deployments.
 # -------------------------------- WARNING --------------------------------
-
 terraform {
-  required_version = "~> 0.12" #cannot contain interpolations. Means requiered version >= 0.12 and < 0.13
+  required_version = "> 1.5"
 }
 
 #-----------------------------------------
 # Default provider: Kubernetes
 #-----------------------------------------
-
 provider "kubernetes" {
-  #Context to choose from the config file.
-  config_context = "kubernetes-admin@ditwl-k8s-01"
-  version = "~> 1.12"
+
+  #kubeconfig file, if using K3S set the path
+  config_path = "/etc/rancher/k3s/k3s.yaml"
+
+  #Context to choose from the config file. Change if not default.
+  #config_context = "local-k3s"
 }
 
 
 #-----------------------------------------
-# KUBERNETES DEPLOYMENT COLOR APP
+# KUBERNETES: Deploy App
 #-----------------------------------------
-
 resource "kubernetes_deployment" "color" {
     metadata {
         name = "color-blue-dep"
@@ -45,10 +44,8 @@ resource "kubernetes_deployment" "color" {
                 color = "blue"
             } //match_labels
         } //selector
-
         #Number of replicas
-        replicas = 3
-
+        replicas = 1
         #Template for the creation of the pod
         template { 
             metadata {
@@ -57,7 +54,6 @@ resource "kubernetes_deployment" "color" {
                     color = "blue"
                 } //labels
             } //metadata
-
             spec {
                 container {
                     image = "itwonderlab/color"   #Docker image name
@@ -75,11 +71,7 @@ resource "kubernetes_deployment" "color" {
                     }//port          
                     
                     resources {
-                        limits {
-                            cpu    = "0.5"
-                            memory = "512Mi"
-                        } //limits
-                        requests {
+                        requests = {
                             cpu    = "250m"
                             memory = "50Mi"
                         } //requests
@@ -90,8 +82,10 @@ resource "kubernetes_deployment" "color" {
     } //spec
 } //resource
 
+
+
 #-------------------------------------------------
-# KUBERNETES DEPLOYMENT COLOR SERVICE NODE PORT
+# KUBERNETES: Add a NodePort
 #-------------------------------------------------
 
 resource "kubernetes_service" "color-service-np" {
